@@ -1,0 +1,101 @@
+import numpy as np 
+import skfuzzy as fuzz
+from skfuzzy import control as ctrl
+import matplotlib.pyplot as plt
+
+# Define the fuzzy variables with updated ranges
+traffic_condition = ctrl.Antecedent(np.arange(0, 11, 1), 'traffic_condition')  # 0 - 10
+distance_to_customer = ctrl.Antecedent(np.arange(0, 16, 1), 'distance_to_customer')  # 0 - 15
+weather_condition = ctrl.Antecedent(np.arange(0, 3, 1), 'weather_condition')  # 0 - 2 (Clear, Rainy, Stormy)
+order_preparation_time = ctrl.Antecedent(np.arange(0, 26, 1), 'order_preparation_time')  # 0 - 25
+driver_fatigue_level = ctrl.Antecedent(np.arange(0, 11, 1), 'driver_fatigue_level')  # 0 - 10
+
+# Define the membership functions for inputs
+traffic_condition['low'] = fuzz.trimf(traffic_condition.universe, [0, 0, 3])
+traffic_condition['medium'] = fuzz.trimf(traffic_condition.universe, [2, 5, 8])
+traffic_condition['high'] = fuzz.trimf(traffic_condition.universe, [7, 10, 10])
+
+distance_to_customer['short'] = fuzz.trimf(distance_to_customer.universe, [0, 0, 5])
+distance_to_customer['medium'] = fuzz.trimf(distance_to_customer.universe, [3, 7, 12])
+distance_to_customer['long'] = fuzz.trimf(distance_to_customer.universe, [8, 15, 15])
+
+weather_condition['clear'] = fuzz.trimf(weather_condition.universe, [0, 0, 1])
+weather_condition['rainy'] = fuzz.trimf(weather_condition.universe, [0, 1, 2])
+weather_condition['stormy'] = fuzz.trimf(weather_condition.universe, [1, 2, 2])
+
+order_preparation_time['fast'] = fuzz.trimf(order_preparation_time.universe, [0, 0, 5])
+order_preparation_time['medium'] = fuzz.trimf(order_preparation_time.universe, [4, 10, 15])
+order_preparation_time['slow'] = fuzz.trimf(order_preparation_time.universe, [10, 20, 25])
+
+driver_fatigue_level['low'] = fuzz.trimf(driver_fatigue_level.universe, [0, 0, 3])
+driver_fatigue_level['medium'] = fuzz.trimf(driver_fatigue_level.universe, [2, 5, 7])
+driver_fatigue_level['high'] = fuzz.trimf(driver_fatigue_level.universe, [5, 10, 10])
+
+# Define the fuzzy output variables
+delivery_time = ctrl.Consequent(np.arange(0, 11, 1), 'delivery_time')
+incentive_bonus = ctrl.Consequent(np.arange(0, 11, 1), 'incentive_bonus')
+driver_performance = ctrl.Consequent(np.arange(0, 6, 1), 'driver_performance')
+
+# Define the membership functions for outputs
+delivery_time['short'] = fuzz.trimf(delivery_time.universe, [0, 0, 3])
+delivery_time['medium'] = fuzz.trimf(delivery_time.universe, [2, 5, 8])
+delivery_time['long'] = fuzz.trimf(delivery_time.universe, [7, 10, 10])
+
+incentive_bonus['low'] = fuzz.trimf(incentive_bonus.universe, [0, 0, 5])
+incentive_bonus['medium'] = fuzz.trimf(incentive_bonus.universe, [0, 5, 10])
+incentive_bonus['high'] = fuzz.trimf(incentive_bonus.universe, [5, 10, 10])
+
+driver_performance['poor'] = fuzz.trimf(driver_performance.universe, [0, 0, 2])
+driver_performance['average'] = fuzz.trimf(driver_performance.universe, [1, 2, 3])
+driver_performance['excellent'] = fuzz.trimf(driver_performance.universe, [2, 5, 5])
+
+# Define the fuzzy rules (1 - 15)
+rule1 = ctrl.Rule(traffic_condition['low'] & distance_to_customer['short'], delivery_time['short'])
+rule2 = ctrl.Rule(traffic_condition['medium'] & distance_to_customer['medium'], delivery_time['medium'])
+rule3 = ctrl.Rule(traffic_condition['high'] & distance_to_customer['long'], delivery_time['long'])
+rule4 = ctrl.Rule(weather_condition['clear'], incentive_bonus['low'])
+rule5 = ctrl.Rule(weather_condition['rainy'], incentive_bonus['medium'])
+rule6 = ctrl.Rule(weather_condition['stormy'], incentive_bonus['high'])
+rule7 = ctrl.Rule(order_preparation_time['fast'] & traffic_condition['low'], delivery_time['short'])
+rule8 = ctrl.Rule(order_preparation_time['medium'] & traffic_condition['medium'], delivery_time['medium'])
+rule9 = ctrl.Rule(order_preparation_time['slow'] & traffic_condition['high'], delivery_time['long'])
+rule10 = ctrl.Rule(order_preparation_time['fast'] & weather_condition['clear'], delivery_time['short'])
+rule11 = ctrl.Rule(order_preparation_time['fast'] & weather_condition['rainy'], delivery_time['medium'])
+rule12 = ctrl.Rule(order_preparation_time['fast'] & weather_condition['stormy'], delivery_time['long'])
+rule13 = ctrl.Rule(driver_fatigue_level['low'] & traffic_condition['low'], delivery_time['short'])
+rule14 = ctrl.Rule(driver_fatigue_level['medium'] & traffic_condition['medium'], delivery_time['medium'])
+rule15 = ctrl.Rule(driver_fatigue_level['high'] & traffic_condition['high'], delivery_time['long'])
+rule16 = ctrl.Rule(delivery_time['short'] & driver_fatigue_level['low'], driver_performance['excellent'])
+rule17 = ctrl.Rule(delivery_time['medium'] & driver_fatigue_level['medium'], driver_performance['average'])
+rule18 = ctrl.Rule(delivery_time['long'] & driver_fatigue_level['high'], driver_performance['poor'])
+
+
+# Create the control system, including the new rules
+control_system = ctrl.ControlSystem([
+    rule1, rule2, rule3, rule4, rule5, rule6, 
+    rule7, rule8, rule9, rule10, rule11, rule12, 
+    rule13, rule14, rule15, rule16, rule17, rule18 # Added new rules
+])
+
+# Fix the error: Use correct variable name 'control_system' not 'contrl_system'
+fuzzy_system = ctrl.ControlSystemSimulation(control_system)
+
+# Input values for testing
+fuzzy_system.input['traffic_condition'] = 5  # Medium traffic
+fuzzy_system.input['distance_to_customer'] = 4  # Medium distance
+fuzzy_system.input['weather_condition'] = 2  # Stormy weather
+fuzzy_system.input['order_preparation_time'] = 10  # Medium preparation time
+fuzzy_system.input['driver_fatigue_level'] = 4  # Medium fatigue
+
+# Compute the result
+fuzzy_system.compute()
+
+# Print the results
+print(f"Estimated Delivery Time: {fuzzy_system.output['delivery_time']}")
+print(f"Incentive Bonus: {fuzzy_system.output['incentive_bonus']}")
+print(f"Driver Performance: {fuzzy_system.output['driver_performance']}")
+
+# Visualize the results
+delivery_time.view(sim=fuzzy_system)
+incentive_bonus.view(sim=fuzzy_system)
+driver_performance.view(sim=fuzzy_system)
